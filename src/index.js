@@ -1,7 +1,21 @@
 import 'leaflet';
 import 'leaflet.fullscreen';
 import '@geoman-io/leaflet-geoman-free';
-import './bubble-layer';
+
+import { bubbleLayer } from './bubble-layer';
+
+import * as geoJson_1400_1410 from '../data/db_1400_1410';
+import * as geoJson_1425_1435 from '../data/db_1425_1435';
+import * as geoJson_1450_1460 from '../data/db_1450_1460';
+
+///////////////////////////////////////////////////////////
+// Map Instance
+///////////////////////////////////////////////////////////
+const map = L.map('map', {
+	center: [43.771389, 11.254167],
+	zoom: 3,
+	fullscreenControl: true,
+});
 
 ///////////////////////////////////////////////////////////
 // Base Layers
@@ -12,7 +26,7 @@ const Jawg_Terrain = L.tileLayer('https://{s}.tile.jawg.io/jawg-terrain/{z}/{x}/
 	maxZoom: 18,
 	subdomains: 'abcd',
 	accessToken: __env.JAWG_TOKEN,
-});
+}).addTo(map);
 
 const Esri_WorldTerrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}', {
 	attribution: 'Tiles &copy; Esri &mdash; Source: USGS, Esri, TANA, DeLorme, and NPS',
@@ -20,21 +34,9 @@ const Esri_WorldTerrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/re
 });
 
 const baseMaps = {
-	"JAWG Terrain": Jawg_Terrain,
-	"ESRI Terrain": Esri_WorldTerrain,
+	'JAWG Terrain': Jawg_Terrain,
+	'ESRI Terrain': Esri_WorldTerrain,
 };
-
-///////////////////////////////////////////////////////////
-// Map Instance
-///////////////////////////////////////////////////////////
-const map = L.map('map', {
-	center: [43.771389, 11.254167],
-	zoom: 3,
-	fullscreenControl: true,
-	layers: [Jawg_Terrain],
-});
-
-L.control.layers(baseMaps, {}).addTo(map);
 
 ///////////////////////////////////////////////////////////
 // Geoman Control
@@ -42,8 +44,32 @@ L.control.layers(baseMaps, {}).addTo(map);
 map.pm.addControls({position: 'topleft'});
 
 ///////////////////////////////////////////////////////////
-// Bubble layer
+// Bubble layers
 ///////////////////////////////////////////////////////////
+const bubbles_1400_1410 = bubbleLayer(
+	geoJson_1400_1410.default,
+	{ property: "amount", style: { fillColor: '#e88484' } },
+).addTo(map);
 
+const bubbles_1425_1435 = bubbleLayer(
+	geoJson_1425_1435.default,
+	{ property: "amount", style: { fillColor: '#b145f5' } },
+);
+
+const bubbles_1450_1460 = bubbleLayer(
+	geoJson_1450_1460.default,
+	{ property: "amount", style: { fillColor: '#74acb8' } },
+);
+
+const overlayMaps = {
+	'1400-1410': bubbles_1400_1410,
+	'1425-1435': bubbles_1425_1435,
+	'1450-1460': bubbles_1450_1460,
+};
+
+///////////////////////////////////////////////////////////
+// Add layers
+///////////////////////////////////////////////////////////
+L.control.layers(baseMaps, overlayMaps).addTo(map);
 
 
