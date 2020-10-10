@@ -3,30 +3,26 @@ import * as _chroma from 'chroma-js';
 
 const chroma = _chroma.default;
 
-const defaultStyles = {
-  radius: 10,
-  fillColor: "#74acb8",
-  color: "#f5f5f5",
-  weight: 1,
-  opacity: 0.5,
-  fillOpacity: 0.5,
-};
-
 L.BubbleLayer = L.Layer.extend({
+
+  options: {
+    max_radius: 35,
+    legend: true,
+    tooltip: true,
+    scale: false,
+    style: {
+      radius: 10,
+      fillColor: "#74acb8",
+      color: "#f5f5f5",
+      weight: 1,
+      opacity: 0.5,
+      fillOpacity: 0.5,
+    },
+  },
 
   initialize: function (geojson, options) {
 
     this._geojson = geojson;
-
-    options.max_radius = options.hasOwnProperty('max_radius') ? options.max_radius : 35;
-
-    options.legend = options.hasOwnProperty('legend') ? options.legend : true;
-
-    options.tooltip = options.hasOwnProperty('tooltip') ? options.tooltip : true;
-
-    options.scale = options.hasOwnProperty('scale') ? options.scale : false;
-
-    options.style = options.hasOwnProperty('style') ? {...defaultStyles, ...options.style} : defaultStyles;
 
     L.setOptions(this, options);
 
@@ -49,11 +45,9 @@ L.BubbleLayer = L.Layer.extend({
     this._map = map;
 
     // createLayer does the work of visualizing geoJSON as bubbles
-    const geoJsonLayer = this.createLayer();
+    this._layer = this._createLayer();
 
-    this._layer = geoJsonLayer;
-
-    map.addLayer(geoJsonLayer);
+    map.addLayer(this._layer);
   },
 
   onRemove: function (map) {
@@ -61,9 +55,13 @@ L.BubbleLayer = L.Layer.extend({
 
     // Handle the native remove from map function
     map.removeLayer(this._layer);
+
+    if (this._infoControl) {
+      this._infoControl.remove();
+    }
   },
 
-  createLayer: function() {
+  _createLayer: function() {
 
     const max = this._getMax(this._geojson)
 
@@ -150,9 +148,35 @@ L.BubbleLayer = L.Layer.extend({
   },
 
   _onEachFeature: function(feature, layer) {
+    const highlightFeature = this._highlightFeature.bind(this);
+    const resetHighlight = this._resetHighlight.bind(this);
 
+    layer.on({
+      mouseover: highlightFeature,
+      mouseout: resetHighlight,
+    });
   },
 
+  _highlightFeature: function(event) {
+    const layer = event.target;
+
+    layer.setStyle({
+      weight: 3,
+      color: '#f5f5f5',
+      fillOpacity: 1,
+    });
+
+    if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+      layer.bringToFront();
+    }
+
+    this.fire('bubble-hover', { payload: layer.feature.properties }, true);
+  },
+
+  _resetHighlight: function(event) {
+    this._layer.resetStyle(event.target);
+    this.fire('bubble-hover', { payload: null }, true);
+  },
 });
 
 export const bubbleLayer = (geojson, options) => new L.BubbleLayer(geojson, options);

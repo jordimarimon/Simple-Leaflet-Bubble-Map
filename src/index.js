@@ -3,6 +3,7 @@ import 'leaflet.fullscreen';
 import '@geoman-io/leaflet-geoman-free';
 
 import { bubbleLayer } from './bubble-layer';
+import { infoControl } from './info-control';
 
 import * as geoJson_1400_1410 from '../data/db_1400_1410';
 import * as geoJson_1425_1435 from '../data/db_1425_1435';
@@ -72,4 +73,19 @@ const overlayMaps = {
 ///////////////////////////////////////////////////////////
 L.control.layers(baseMaps, overlayMaps).addTo(map);
 
+///////////////////////////////////////////////////////////
+// Info Control
+///////////////////////////////////////////////////////////
+const info = infoControl().addTo(map);
 
+bubbles_1400_1410.on('bubble-hover', (event) => {
+	info.update(event.payload);
+});
+
+bubbles_1425_1435.on('bubble-hover', (event) => {
+	info.update(event.payload);
+});
+
+bubbles_1450_1460.on('bubble-hover', (event) => {
+	info.update(event.payload);
+});
