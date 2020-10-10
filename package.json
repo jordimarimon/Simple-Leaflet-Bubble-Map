@@ -1,0 +1,25 @@
+{
+  "name": "aina_bubble_map",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Interactive Map with Leaflet Js",
+  "main": "index.js",
+  "author": "Jordi Marimon Palarea",
+  "license": "ISC",
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c --watch"
+  },
+  "dependencies": {
+    "@geoman-io/leaflet-geoman-free": "2.7.0",
+    "leaflet": "1.7.1",
+    "leaflet.fullscreen": "1.6.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "9.0.0",
+    "@rollup/plugin-replace": "2.3.3",
+    "dotenv": "8.2.0",
+    "rollup": "2.29.0",
+    "rollup-plugin-commonjs": "10.1.0"
+  }
+}
