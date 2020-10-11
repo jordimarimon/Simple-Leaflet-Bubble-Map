@@ -1,6 +1,5 @@
 {
-  "name": "aina_bubble_map",
-  "private": true,
+  "name": "simple_bubble_map",
   "version": "1.0.0",
   "description": "Interactive Map with Leaflet Js",
   "main": "index.js",
