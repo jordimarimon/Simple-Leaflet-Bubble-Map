@@ -49,17 +49,17 @@ map.pm.addControls({position: 'topleft'});
 ///////////////////////////////////////////////////////////
 const bubbles_1400_1410 = bubbleLayer(
 	geoJson_1400_1410.default,
-	{ property: "amount", style: { fillColor: '#e88484' } },
+	{ property: "amount", style: { fillColor: '#E88484' } },
 ).addTo(map);
 
 const bubbles_1425_1435 = bubbleLayer(
 	geoJson_1425_1435.default,
-	{ property: "amount", style: { fillColor: '#b145f5' } },
+	{ property: "amount", style: { fillColor: '#B145F5' } },
 );
 
 const bubbles_1450_1460 = bubbleLayer(
 	geoJson_1450_1460.default,
-	{ property: "amount", style: { fillColor: '#74acb8' } },
+	{ property: "amount", style: { fillColor: '#74ACB8' } },
 );
 
 const overlayMaps = {

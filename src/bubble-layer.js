@@ -1,3 +1,4 @@
+import { legendControl } from './legend';
 import { scaleLinear } from 'd3-scale';
 import * as _chroma from 'chroma-js';
 
@@ -7,13 +8,14 @@ L.BubbleLayer = L.Layer.extend({
 
   options: {
     max_radius: 35,
+    max_amount: undefined,
     legend: true,
     tooltip: true,
     scale: false,
     style: {
       radius: 10,
-      fillColor: "#74acb8",
-      color: "#f5f5f5",
+      fillColor: "#74ACB8",
+      color: "#F5F5F5",
       weight: 1,
       opacity: 0.5,
       fillOpacity: 0.5,
@@ -21,7 +23,6 @@ L.BubbleLayer = L.Layer.extend({
   },
 
   initialize: function (geojson, options) {
-
     this._geojson = geojson;
 
     L.setOptions(this, options);
@@ -36,6 +37,7 @@ L.BubbleLayer = L.Layer.extend({
 
   addTo: function (map) {
     map.addLayer(this);
+
     return this;
   },
 
@@ -48,6 +50,10 @@ L.BubbleLayer = L.Layer.extend({
     this._layer = this._createLayer();
 
     map.addLayer(this._layer);
+
+    if (this.options.legend) {
+      this._showLegend(this._scale, this._max);
+    }
   },
 
   onRemove: function (map) {
@@ -56,13 +62,12 @@ L.BubbleLayer = L.Layer.extend({
     // Handle the native remove from map function
     map.removeLayer(this._layer);
 
-    if (this._infoControl) {
-      this._infoControl.remove();
+    if (this._legend) {
+      this._legend.remove();
     }
   },
 
   _createLayer: function() {
-
     const max = this._getMax(this._geojson)
 
     // Caluclate the minimum and maximum radius from the max area
@@ -75,6 +80,7 @@ L.BubbleLayer = L.Layer.extend({
       .domain([0, max])
       .range([min_area, max_area]);
 
+    // Normalized scale between [0, 1]
     const normal = scaleLinear()
      .domain([0,max])
      .range([0, 1]);
@@ -94,35 +100,19 @@ L.BubbleLayer = L.Layer.extend({
     }
 
     const onEachFeature = this._onEachFeature.bind(this);
+    const pointToLayer = (feature, latlng) => this._pointToLayer.call(this, feature, latlng, style, property, fill_scale);
 
     return new L.geoJson(this._geojson, {
-
-      pointToLayer: function(feature, latlng) {
-
-        // TODO Check if total is a valid amount
-        const total = feature.properties[property];
-
-        // Calculate the area of the bubble based on the property total and the resulting radius
-        const area = scale(total);
-        const radius = Math.sqrt(area / Math.PI)
-        style.radius = radius;
-
-        // If the option include a scale, use it
-        if (fill_scale) { style.fillColor = fill_scale(normal(total)) }
-        style.color = chroma(style.fillColor).darken().hex()
-
-        // Create the circleMarker object
-        return L.circleMarker(latlng, style);
-      },
-
+      pointToLayer: pointToLayer,
       onEachFeature: onEachFeature,
     });
   },
 
   _getMax : function() {
-    let max = 0;
     const features = this._geojson.features;
     const property = this.options.property;
+
+    let max = 0;
 
     for (let i = 0; i < features.length; i++) {
       if (features[i].properties[property] > max) {
@@ -133,12 +123,34 @@ L.BubbleLayer = L.Layer.extend({
     return max;
   },
 
+  _pointToLayer: function(feature, latlng, style, property, fill_scale) {
+    let total = +feature.properties[property];
+
+    if (isNaN(total)) {
+      total = 0;
+    }
+
+    // Calculate the area of the bubble based on the property total and the resulting radius
+    const area = this._scale(total);
+    const radius = Math.sqrt(area / Math.PI);
+    style.radius = radius;
+
+    // If the option include a scale, use it
+    if (fill_scale) { 
+      style.fillColor = fill_scale(normal(total));
+    }
+
+    style.color = chroma(style.fillColor).darken().hex();
+
+    // Create the circleMarker object
+    return L.circleMarker(latlng, style);
+  },
+
   _hasRequiredProp: function(property) {
-    const valid = true;
     const features = this._geojson.features;
+    const valid = true;
 
     for (let i = 0; i < features.length; i++) {
-
       if (features[i].properties.hasOwnProperty(property) !== true) {
         valid = false;
       }
@@ -175,8 +187,29 @@ L.BubbleLayer = L.Layer.extend({
 
   _resetHighlight: function(event) {
     this._layer.resetStyle(event.target);
+
     this.fire('bubble-hover', { payload: null }, true);
   },
+
+  _showLegend: function(scale, max) {
+    this._legend = legendControl({position: 'bottomright'}).addTo(this._map);
+
+    const max_radius = this.options.max_radius;
+    const property = this.options.property;
+    const fill = this.options.style.fillColor;
+    const opacity = this.options.style.opacity;
+    const fill_scale = false;
+
+    const normal = scaleLinear()
+     .domain([0,max])
+     .range([0, 1]);
+
+    if (this.options.scale) {
+      fill_scale = chroma.scale(this.options.scale);
+    }
+
+    this._legend.update(property, max, max_radius, scale, normal, fill_scale, fill, opacity);
+  }
 });
 
 export const bubbleLayer = (geojson, options) => new L.BubbleLayer(geojson, options);
