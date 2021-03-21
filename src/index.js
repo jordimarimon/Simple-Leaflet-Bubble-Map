@@ -4,6 +4,8 @@ import '@geoman-io/leaflet-geoman-free';
 
 import { bubbleLayer } from './bubble-layer';
 import { infoControl } from './info-control';
+import { activeLayers } from './ActiveLayers';
+import { legendControl } from './legend';
 
 import * as geoJson_1400_1410 from '../data/db_1400_1410';
 import * as geoJson_1425_1435 from '../data/db_1425_1435';
@@ -34,7 +36,7 @@ const Esri_WorldTerrain = L.tileLayer('https://server.arcgisonline.com/ArcGIS/re
 	maxZoom: 18
 });
 
-const baseMaps = {
+const baseLayers = {
 	'JAWG Terrain': Jawg_Terrain,
 	'ESRI Terrain': Esri_WorldTerrain,
 };
@@ -49,29 +51,72 @@ map.pm.addControls({position: 'topleft'});
 ///////////////////////////////////////////////////////////
 const bubbles_1400_1410 = bubbleLayer(
 	geoJson_1400_1410.default,
-	{ property: "amount", style: { fillColor: '#E88484' } },
+	{ 
+		property: "amount", 
+		max_amount: 20, 
+		style: { 
+			fillColor: '#E88484', 
+			legendColor: '#202020',
+		},
+	},
 ).addTo(map);
 
 const bubbles_1425_1435 = bubbleLayer(
 	geoJson_1425_1435.default,
-	{ property: "amount", style: { fillColor: '#B145F5' } },
+	{ 
+		property: "amount", 
+		max_amount: 20, 
+		style: { 
+			fillColor: '#B145F5', 
+			legendColor: '#202020',
+		},
+	},
 );
 
 const bubbles_1450_1460 = bubbleLayer(
 	geoJson_1450_1460.default,
-	{ property: "amount", style: { fillColor: '#74ACB8' } },
+	{ 
+		property: "amount", 
+		max_amount: 20, 
+		style: { 
+			fillColor: '#74ACB8', 
+			legendColor: '#202020',
+		},
+	},
 );
 
-const overlayMaps = {
+const overlayLayers = {
 	'1400-1410': bubbles_1400_1410,
 	'1425-1435': bubbles_1425_1435,
 	'1450-1460': bubbles_1450_1460,
 };
 
 ///////////////////////////////////////////////////////////
+// Add legend
+///////////////////////////////////////////////////////////
+const legend = legendControl({position: 'bottomright'}).addTo(map);
+bubbles_1400_1410.updateLegend(legend);
+let legendIsVisible = true;
+
+///////////////////////////////////////////////////////////
 // Add layers
 ///////////////////////////////////////////////////////////
-L.control.layers(baseMaps, overlayMaps).addTo(map);
+const control = activeLayers(baseLayers, overlayLayers);
+control.onChange(() => {
+	const activeLayers = control.getActiveOverlayLayers();
+	const activeOverlayLayers = Object.keys(activeLayers).filter(key => activeLayers[key].overlay);
+
+	if (!activeOverlayLayers.length && legendIsVisible) {
+		legend.remove();
+		legendIsVisible = false;
+	} else if (activeOverlayLayers.length && !legendIsVisible) {
+		legend.addTo(map);
+		activeLayers[activeOverlayLayers[0]].layer.updateLegend(legend);
+		legendIsVisible = true;
+	}
+});
+
+control.addTo(map);
 
 ///////////////////////////////////////////////////////////
 // Info Control

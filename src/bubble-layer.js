@@ -1,4 +1,3 @@
-import { legendControl } from './legend';
 import { scaleLinear } from 'd3-scale';
 import * as _chroma from 'chroma-js';
 
@@ -8,7 +7,7 @@ L.BubbleLayer = L.Layer.extend({
 
   options: {
     max_radius: 35,
-    max_amount: undefined,
+    max_amount: 20,
     legend: true,
     tooltip: true,
     scale: false,
@@ -16,6 +15,7 @@ L.BubbleLayer = L.Layer.extend({
       radius: 10,
       fillColor: "#74ACB8",
       color: "#F5F5F5",
+      legendColor: '#202020',
       weight: 1,
       opacity: 0.5,
       fillOpacity: 0.5,
@@ -50,10 +50,6 @@ L.BubbleLayer = L.Layer.extend({
     this._layer = this._createLayer();
 
     map.addLayer(this._layer);
-
-    if (this.options.legend) {
-      this._showLegend(this._scale, this._max);
-    }
   },
 
   onRemove: function (map) {
@@ -61,14 +57,30 @@ L.BubbleLayer = L.Layer.extend({
 
     // Handle the native remove from map function
     map.removeLayer(this._layer);
+  },
 
-    if (this._legend) {
-      this._legend.remove();
+  updateLegend: function(legend) {
+    const scale = this._scale;
+    const max = this._max;
+    const max_radius = this.options.max_radius;
+    const property = this.options.property;
+    const fill = this.options.style.legendColor;
+    const opacity = this.options.style.opacity;
+    const fill_scale = false;
+
+    const normal = scaleLinear()
+     .domain([0,max])
+     .range([0, 1]);
+
+    if (this.options.scale) {
+      fill_scale = chroma.scale(this.options.scale);
     }
+
+    legend.update(property, max, max_radius, scale, normal, fill_scale, fill, opacity);
   },
 
   _createLayer: function() {
-    const max = this._getMax(this._geojson)
+    const max = this.options.max_amount || this._getMax(this._geojson);
 
     // Caluclate the minimum and maximum radius from the max area
     // TODO: how to handle zero and negative values
@@ -190,26 +202,6 @@ L.BubbleLayer = L.Layer.extend({
 
     this.fire('bubble-hover', { payload: null }, true);
   },
-
-  _showLegend: function(scale, max) {
-    this._legend = legendControl({position: 'bottomright'}).addTo(this._map);
-
-    const max_radius = this.options.max_radius;
-    const property = this.options.property;
-    const fill = this.options.style.fillColor;
-    const opacity = this.options.style.opacity;
-    const fill_scale = false;
-
-    const normal = scaleLinear()
-     .domain([0,max])
-     .range([0, 1]);
-
-    if (this.options.scale) {
-      fill_scale = chroma.scale(this.options.scale);
-    }
-
-    this._legend.update(property, max, max_radius, scale, normal, fill_scale, fill, opacity);
-  }
 });
 
 export const bubbleLayer = (geojson, options) => new L.BubbleLayer(geojson, options);
